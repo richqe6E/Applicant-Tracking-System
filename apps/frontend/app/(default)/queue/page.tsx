@@ -32,6 +32,7 @@ import { PanelHeader } from '@/components/ui/panel-header';
 import { StatusIndicator, type StatusTone } from '@/components/ui/status-indicator';
 import { Textarea } from '@/components/ui/textarea';
 import { LlmSetupAlert } from '@/components/common/llm-setup-alert';
+import { FeatureGuideButton } from '@/components/common/feature-guide';
 import { AgentPromptDialog } from '@/components/agent/agent-prompt-dialog';
 import { FadePresence } from '@/components/common/presence';
 
@@ -342,6 +343,9 @@ export default function QueuePage() {
         <PageHeader.Back href="/dashboard">{t('common.back')}</PageHeader.Back>
         <PageHeader.Title>{t('queue.title')}</PageHeader.Title>
         <PageHeader.Subtitle>{t('queue.subtitle')}</PageHeader.Subtitle>
+        <PageHeader.Actions>
+          <FeatureGuideButton topic="queue" />
+        </PageHeader.Actions>
       </PageHeader>
 
       <div className="grid gap-8 p-6 md:p-8 lg:grid-cols-2">

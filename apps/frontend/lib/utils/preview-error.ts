@@ -34,6 +34,8 @@ export function getPreviewErrorMessage(
   if (
     normalized.includes('rate limit') ||
     normalized.includes('insufficient_quota') ||
+    normalized.includes('free usage') ||
+    normalized.includes('402') ||
     normalized.includes('429')
   ) {
     return t('tailor.errors.rateLimit');

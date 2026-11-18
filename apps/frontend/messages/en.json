@@ -63,7 +63,9 @@
     "backToDashboard": "Back to Dashboard",
     "goToSettings": "Go to Settings",
     "applicationTracker": "Application Tracker",
-    "queue": "Tailoring Queue"
+    "queue": "Tailoring Queue",
+    "jobsFeed": "Job Feed",
+    "guide": "Guide"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -129,7 +131,12 @@
     "setDefault": "Set as default",
     "duplicate": "Duplicate",
     "addMasterTrack": "Add master track",
-    "masterLimitReached": "Up to {max} master resumes"
+    "masterLimitReached": "Up to {max} master resumes",
+    "workflowBannerTitle": "Quick Workflow (4 Steps)",
+    "workflowStep1": "1. Prepare Master CV",
+    "workflowStep2": "2. Find Jobs",
+    "workflowStep3": "3. Tailor & Check ATS",
+    "workflowStep4": "4. Track Applications"
   },
   "builder": {
     "panels": {
@@ -1635,6 +1642,219 @@
     "improveWriting": {
       "title": "Improve the writing",
       "prompt": "Use Resume Matcher to improve the writing of resume {resumeId}: run two writing rounds (critique every line against the rubric, rewrite the weak ones keeping every fact, verify), then save."
+    }
+  },
+  "jobsFeed": {
+    "title": "Job Search & Quick Import",
+    "subtitle": "Discover fresh job postings across portals, filter by recency, and import directly from JobStreet or any job page.",
+    "searchPlaceholder": "Job title, skill, or company (e.g. Accounting, Backend Engineer)",
+    "locationPlaceholder": "Location (e.g. Jakarta, Bandung, Indonesia)",
+    "searchButton": "Fetch Jobs",
+    "searchingButton": "Fetching...",
+    "loadMore": "Load More",
+    "providerLabel": "Search Engine",
+    "providerSearchApi": "SearchAPI (Google Jobs)",
+    "providerApify": "Apify (JobStreet Actor)",
+    "providerSaved": "Saved Only",
+    "freshnessLabel": "Posted",
+    "freshnessAll": "Any time",
+    "freshness24h": "Last 24 hours",
+    "freshness3d": "Last 3 days",
+    "freshness7d": "Last 7 days",
+    "freshness30d": "Last 30 days",
+    "portalLabel": "Portal",
+    "portalAll": "All portals",
+    "workTypeLabel": "Work Type",
+    "workTypeAll": "All types",
+    "workTypeRemote": "Remote",
+    "workTypeFulltime": "Full-time",
+    "workTypeParttime": "Part-time",
+    "workTypeContract": "Contract",
+    "workTypeInternship": "Internship",
+    "sortLabel": "Sort",
+    "sortNewest": "Newest first",
+    "sortMatch": "Best CV match",
+    "bookmarkedOnly": "Bookmarked",
+    "quickImportBtn": "Quick Import / Bookmarklet",
+    "sourcesBtn": "API Keys",
+    "clearCacheBtn": "Clear Unsaved",
+    "resultsCount": "{count} jobs shown",
+    "noResultsTitle": "No matching jobs yet",
+    "noResultsDesc": "Search above using SearchAPI / Apify, or import directly from JobStreet using a URL or 1-Click Bookmarklet.",
+    "selectJobPrompt": "Select a job listing on the left to preview details and tailor your resume.",
+    "matchBadge": "{score}% Match",
+    "tailorNow": "Tailor Resume",
+    "addToQueue": "Add to Queue",
+    "saveToTracker": "Save to Tracker",
+    "openApplyLink": "Open Original Post",
+    "bookmark": "Bookmark",
+    "unbookmark": "Saved",
+    "deleteListing": "Remove",
+    "addedToQueue": "Added to tailoring queue",
+    "savedToTracker": "Saved to Application Tracker",
+    "noMasterResume": "Upload or create a Master Resume first on Dashboard.",
+    "importModalTitle": "Quick Import from JobStreet & Other Portals",
+    "importUrlLabel": "Paste Public Job URL",
+    "importUrlPlaceholder": "https://id.jobstreet.com/job/...",
+    "importUrlBtn": "Import from URL",
+    "importingUrl": "Importing...",
+    "bookmarkletTitle": "1-Click Browser Bookmarklet (Best for JobStreet / LinkedIn)",
+    "bookmarkletDesc": "Drag this button to your browser bookmarks bar (or copy the code). When viewing any job on JobStreet, LinkedIn, or Glints, click it once to send the job directly here without anti-bot blocks.",
+    "bookmarkletButtonLabel": "Save to Resume Matcher",
+    "copyBookmarklet": "Copy Bookmarklet Code",
+    "bookmarkletCopied": "Bookmarklet code copied",
+    "manualClipTitle": "Or Paste Clipped Job Details",
+    "clipTitle": "Job Title",
+    "clipCompany": "Company",
+    "clipLocation": "Location",
+    "clipUrl": "Job URL (optional)",
+    "clipDescription": "Job Description",
+    "clipSaveBtn": "Save Job Listing",
+    "sourcesModalTitle": "Job Search API Keys",
+    "sourcesModalDesc": "Keys are stored encrypted locally on your machine inside apps/backend/data/job_sources.json.",
+    "searchApiKeyLabel": "SearchAPI.io API Key",
+    "apifyTokenLabel": "Apify API Token",
+    "apifyActorLabel": "Apify JobStreet Actor ID",
+    "configuredBadge": "Configured",
+    "notConfiguredBadge": "Not set",
+    "saveSourcesBtn": "Save Credentials",
+    "sourcesSaved": "Job source credentials saved",
+    "clipImported": "Job imported from browser tab",
+    "providerSerpApi": "SerpApi (Google Jobs)",
+    "providerJSearch": "JSearch (LinkedIn / Indeed)",
+    "providerInstagram": "Instagram Loker (@handle / keyword)",
+    "serpApiKeyLabel": "SerpApi API Key",
+    "rapidApiKeyLabel": "RapidAPI Key (JSearch + Instagram)",
+    "estimateSalaryBtn": "Salary Estimate",
+    "estimatingSalary": "Estimating...",
+    "salaryEstimateTitle": "Market Salary Benchmark (JSearch)",
+    "salaryEstimateEmpty": "No salary benchmark data found for this role/location.",
+    "providerPortals": "Company Portals (Greenhouse / Lever / Ashby)",
+    "portalsBtn": "Portals & Blacklist",
+    "portalsModalTitle": "Target Company Portals & Blacklist",
+    "portalsModalDesc": "Scan official company career boards directly (no search API quota used) and filter out unwanted companies or keywords.",
+    "addPortalTitle": "Add Target Company Portal",
+    "portalNameLabel": "Company Name",
+    "portalKindLabel": "Portal Type",
+    "portalIdentifierLabel": "Board Token / Career URL",
+    "addPortalBtn": "Add Portal",
+    "blacklistCompaniesLabel": "Blacklisted Companies (comma-separated)",
+    "blacklistKeywordsLabel": "Blacklisted Keywords (comma-separated)",
+    "savePortalsBtn": "Save Portals & Blacklist",
+    "portalsSaved": "Portals & blacklist updated",
+    "evaluateBtn": "AI Fit Score (1-5)",
+    "evaluatingBtn": "Evaluating...",
+    "evalTitle": "Career-Ops Evaluation Rubric",
+    "evalStrengths": "Strengths",
+    "evalGaps": "Honest Gaps",
+    "formAnswersBtn": "Draft Form Answers",
+    "formAnswersTitle": "Application Form Assistant (HITL)",
+    "formAnswersDesc": "Draft truthful copy-paste answers grounded in your Master Resume. Review carefully before submitting.",
+    "formQuestionsLabel": "Questions (one per line, leave blank for standard questions)",
+    "draftAnswersBtn": "Generate Draft Answers",
+    "draftingAnswers": "Drafting...",
+    "redFlagStale": "Old >30d",
+    "redFlagVague": "Short Desc",
+    "redFlagScam": "Commission/MLM Signal",
+    "redFlagNoLink": "No Apply Link",
+    "providerAll": "All Sources (Auto-Merge)",
+    "providerSerpGoogle": "SerpApi Google Web (JobStreet/Glints)",
+    "providerFacebook": "Facebook Loker (Public Posts)",
+    "advancedFilters": "Advanced Filters",
+    "quickTipsTitle": "How it works:",
+    "quickTipsBody": "1) Type a role & city and click Fetch Jobs (auto-searches 5 portals at once). 2) Filter by 24h / 7d or CV match. 3) Click Tailor Resume to customize your CV.",
+    "primaryActionsLabel": "Main Actions",
+    "smartToolsLabel": "AI & Research Tools",
+    "activeSourceHint": "Search Engine: {label}"
+  },
+  "guide": {
+    "buttonLabel": "Guide",
+    "modalTitle": "Feature Guide & Walkthrough",
+    "modalSubtitle": "Step-by-step explanations for every tool in Resume Matcher.",
+    "openPage": "Open This Page",
+    "whatItDoes": "What this feature does",
+    "howToUse": "How to use (Step by step)",
+    "tipsTitle": "Helpful tips",
+    "topics": {
+      "dashboard": {
+        "tab": "1. Dashboard & Master CV",
+        "title": "Dashboard & Master Resume",
+        "summary": "Your home base to upload or build your complete Master Resume (you can store up to 5 career tracks) and see all tailored CVs.",
+        "steps": [
+          "Click Upload Resume (PDF/DOCX) or Create New (AI Wizard) to build your Master Resume.",
+          "Wait until its status becomes Ready, then open it to verify contact info, dates, and real skills.",
+          "Set your main resume as Default Master so Job Search can automatically calculate your CV match score."
+        ],
+        "tip": "Never exaggerate on your Master Resume. Keep it complete and truthful—Resume Matcher will automatically pick the most relevant points for each job."
+      },
+      "jobsFeed": {
+        "tab": "2. Job Search & Import",
+        "title": "Job Search, Filtering & Quick Import",
+        "summary": "Discover fresh jobs across Google Jobs, JobStreet, Glints, Kalibrr, LinkedIn, Facebook Loker, Instagram, and Company Career Portals in one place.",
+        "steps": [
+          "Type a job title and city, then click Fetch Jobs (default All Sources searches 5 engines in parallel).",
+          "Use the 24h / 3d / 7d buttons for the latest postings, or open Advanced Filters to filter by portal, remote/full-time, or CV match.",
+          "If browsing JobStreet or LinkedIn in another tab, use Quick Import -> 1-Click Bookmarklet to send that job straight here.",
+          "Check red-flag warnings, run AI Fit Score (1-5) or Salary Estimate, then click Tailor Resume or Add to Queue."
+        ],
+        "tip": "Add target companies in Portals & Blacklist (Greenhouse/Lever/Ashby) to scan official company career pages without spending search API quota."
+      },
+      "tailor": {
+        "tab": "3. Tailor Resume",
+        "title": "Tailor Resume to a Job Description",
+        "summary": "Rewrites and highlights your real experience to match a job posting's keywords and pass company ATS screening.",
+        "steps": [
+          "Select your Master Resume and choose tailoring intensity (Enrich Keywords is best for daily use).",
+          "Choose page limit (1 page for fresh graduates/staff, 2 pages for senior roles) and paste the job description.",
+          "Click Generate and carefully review Original vs New in the diff modal before saving."
+        ],
+        "tip": "On missing keywords, only check 'I have this' for skills you genuinely know—recruiters will test those in interviews."
+      },
+      "queue": {
+        "tab": "4. Tailoring Queue",
+        "title": "Batch Tailoring Queue",
+        "summary": "Process multiple job descriptions sequentially in the background so you do not have to wait one by one.",
+        "steps": [
+          "Select your Master Resume and paste job descriptions one by one into the queue.",
+          "The background worker processes each item automatically with a safe cooldown.",
+          "Once status turns Ready, click to open the tailored CV in the Resume Builder."
+        ],
+        "tip": "You can also send jobs straight to the queue with 1 click from the Job Search page."
+      },
+      "builder": {
+        "tab": "5. Editor & ATS Check",
+        "title": "Resume Builder, ATS Check & Cover Letter",
+        "summary": "Fine-tune wording, pick from 10 professional templates, audit PDF readability as an ATS machine, and generate cover letters or STAR interview prep.",
+        "steps": [
+          "Check the JD Match tab to see highlighted keyword matches and score breakdown.",
+          "Use the Writing tab to polish weak verbs or overly long bullets.",
+          "Pick a 1-column template (Single Column / Clean / LaTeX) for strict corporate ATS, run ATS Check -> Run Check, then Download PDF.",
+          "Open Cover Letter, Outreach Message, and Interview Prep (STAR method) tabs before applying."
+        ],
+        "tip": "Always run ATS Check after changing templates or margins to verify your email, phone, and reading order parse cleanly."
+      },
+      "tracker": {
+        "tab": "6. Application Tracker",
+        "title": "Kanban Application Tracker",
+        "summary": "Track every application from Saved and Applied through Interview, Accepted, or Rejected, and draft follow-up emails.",
+        "steps": [
+          "Cards can be added automatically from Job Search (Save to Tracker) or manually with + Add Application.",
+          "Drag cards across columns as your application progresses.",
+          "Click any card to keep personal notes or generate a polite follow-up email draft."
+        ],
+        "tip": "Keep the job link and salary notes inside each card so you can review them quickly when HR calls."
+      },
+      "settings": {
+        "tab": "7. Settings & API Keys",
+        "title": "Language, AI Model & Job Source Settings",
+        "summary": "Configure UI/content language, test your AI provider connection, customize prompts, and manage encrypted job-search API keys.",
+        "steps": [
+          "Set UI Language and Content Language (e.g., Indonesia or English for multinational applications).",
+          "Under LLM Configuration, click Test Connection to confirm your AI model responds healthy.",
+          "Toggle optional extra outputs (Cover Letter, Outreach Message, Interview Prep)."
+        ],
+        "tip": "All API keys are encrypted locally on your machine inside apps/backend/data/ and never published online."
+      }
     }
   }
 }

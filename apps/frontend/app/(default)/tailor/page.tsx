@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, buttonClass } from '@/components/ui/button';
@@ -10,39 +10,29 @@ import { Alert } from '@/components/ui/alert';
 import { PageFrame } from '@/components/ui/page-frame';
 import { PageHeader } from '@/components/ui/page-header';
 import { LlmSetupAlert } from '@/components/common/llm-setup-alert';
+import { FeatureGuideButton } from '@/components/common/feature-guide';
 import { AgentPromptDialog } from '@/components/agent/agent-prompt-dialog';
 import { FadePresence } from '@/components/common/presence';
 import { useResumePreview } from '@/components/common/resume_previewer_context';
-import type { ATSScore, ImprovedResult } from '@/components/common/resume_previewer_context';
+import type { ImprovedResult } from '@/components/common/resume_previewer_context';
 import type { ResumeData } from '@/components/dashboard/resume-component';
 import {
-  uploadJobDescriptions,
-  previewImproveResume,
   confirmImproveResume,
   applyKeywords,
   fetchResumeList,
-  toPageFitSettings,
   type ForcedKeywordInput,
   type ResumeListItem,
 } from '@/lib/api/resume';
-import { newProgressId, subscribeToProgress } from '@/lib/api/progress';
-import type { WritingReport } from '@/lib/api/writing';
 import { keywordInText, resumeKeywordText } from '@/lib/utils/keyword-matcher';
 import {
-  DEFAULT_TAILOR_LENGTH,
   TAILOR_BULLET_CAPS,
   TAILOR_PAGE_LIMITS,
-  buildPreviewLengthOptions,
-  readTailorLength,
-  writeTailorLength,
   type TailorBulletCap,
-  type TailorLengthSettings,
   type TailorPageLimit,
 } from '@/lib/utils/tailor-length-settings';
-import { DEFAULT_TEMPLATE_SETTINGS, type TemplateType } from '@/lib/types/template-settings';
 import { fetchPromptConfig, type PromptOption } from '@/lib/api/config';
-import { getPreviewErrorMessage } from '@/lib/utils/preview-error';
 import { Dropdown } from '@/components/ui/dropdown';
+import { useBackgroundOps } from '@/lib/context/background-ops-context';
 import { useStatusCache } from '@/lib/context/status-cache';
 import { ListNumbers, SpinnerGap } from '@phosphor-icons/react';
 import { useTranslations } from '@/lib/i18n';
@@ -63,40 +53,59 @@ const STEP_KEYS = ['tailor.steps.paste', 'tailor.steps.generate', 'tailor.steps.
 
 const masterLabel = (m: ResumeListItem) => m.title || m.filename || m.resume_id;
 
+let promptDefaultApplied = false;
+
 export default function TailorPage() {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const { begin, isCurrent, invalidate } = useOperationOwner('tailor');
   const confirmedResponses = useRef(new WeakMap<ImprovedResult, ImprovedResult>());
   const countedResumes = useRef(new Set<string>());
   const confirmationBusy = useRef(false);
-  const [jobDescription, setJobDescription] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [masterResumeId, setMasterResumeId] = useState<string | null>(null);
-  const [masters, setMasters] = useState<ResumeListItem[]>([]);
-  // The master a preview was built from; confirm must send this, not the picker's current value.
-  const previewSourceIdRef = useRef<string | null>(null);
+
+  const {
+    tailorJobDescription: jobDescription,
+    setTailorJobDescription: setJobDescription,
+    tailorMasterResumeId: masterResumeId,
+    setTailorMasterResumeId: setMasterResumeId,
+    tailorMasters: masters,
+    setTailorMasters: setMasters,
+    tailorSelectedPromptId: selectedPromptId,
+    setTailorSelectedPromptId: setSelectedPromptId,
+    tailorLength,
+    updateTailorLength,
+    tailorGenerating: isGenerating,
+    tailorProgressStage: progressStage,
+    tailorElapsed: elapsed,
+    tailorError: error,
+    setTailorError: setError,
+    tailorPendingResult: pendingResult,
+    setTailorPendingResult: setPendingResult,
+    tailorShowDiffModal: showDiffModal,
+    setTailorShowDiffModal: setShowDiffModal,
+    tailorMissingDiffResult: missingDiffResult,
+    setTailorMissingDiffResult: setMissingDiffResult,
+    tailorShowMissingDiffDialog: showMissingDiffDialog,
+    setTailorShowMissingDiffDialog: setShowMissingDiffDialog,
+    tailorAtsResult: atsResult,
+    setTailorAtsResult: setAtsResult,
+    tailorAtsTemplate: atsTemplate,
+    tailorAtsPrevious: atsPrevious,
+    setTailorAtsPrevious: setAtsPrevious,
+    tailorWritingResult: writingResult,
+    setTailorWritingResult: setWritingResult,
+    tailorWritingResume: writingResume,
+    setTailorWritingResume: setWritingResume,
+    tailorSourceIdRef: previewSourceIdRef,
+    startTailorPreview,
+  } = useBackgroundOps();
+
+  const [isActionBusy, setIsActionBusy] = useState(false);
+  const isLoading = isGenerating || isActionBusy;
   const [promptOptions, setPromptOptions] = useState<PromptOption[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState('keywords');
   const [promptLoading, setPromptLoading] = useState(false);
   const hasUserSelectedPrompt = useRef(false);
   const missingDiffConfirmInFlight = useRef(false);
 
-  // Diff preview modal state
-  const [showDiffModal, setShowDiffModal] = useState(false);
-  const [pendingResult, setPendingResult] = useState<ImprovedResult | null>(null);
-  // The last ATS result stays visible after the diff modal closes; cleared when a new run starts.
-  const [atsResult, setAtsResult] = useState<ATSScore | null>(null);
-  // Template the preview was fitted with; the ATS card warns on two-column layouts.
-  const [atsTemplate, setAtsTemplate] = useState<TemplateType | undefined>(undefined);
-  // ATS score before the last keyword apply; the card shows it as "was".
-  const [atsPrevious, setAtsPrevious] = useState<number | undefined>(undefined);
-  // Writing critique of the last preview, and the resume its paths point into.
-  const [writingResult, setWritingResult] = useState<WritingReport | null>(null);
-  const [writingResume, setWritingResume] = useState<ResumeData | null>(null);
-  // Live stage of the running preview (null until the first update).
-  const [progressStage, setProgressStage] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   // Keywords forced into the pending preview, and the confirmed ones to add to the master.
   const [forcedKeywords, setForcedKeywords] = useState<string[]>([]);
   const [masterSkillsToAdd, setMasterSkillsToAdd] = useState<string[]>([]);
@@ -105,50 +114,25 @@ export default function TailorPage() {
   const [diffConfirmError, setDiffConfirmError] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
-  const [showMissingDiffDialog, setShowMissingDiffDialog] = useState(false);
-  const [missingDiffResult, setMissingDiffResult] = useState<ImprovedResult | null>(null);
-  // Page limit / bullet cap for tailoring; loaded from storage after mount.
-  const [tailorLength, setTailorLength] = useState<TailorLengthSettings>(DEFAULT_TAILOR_LENGTH);
-
-  useEffect(() => {
-    setTailorLength(readTailorLength());
-  }, []);
-
-  const updateTailorLength = (patch: Partial<TailorLengthSettings>) => {
-    const next = { ...tailorLength, ...patch };
-    setTailorLength(next);
-    writeTailorLength(next);
-  };
   const [missingDiffError, setMissingDiffError] = useState<string | null>(null);
 
-  // Elapsed timer for long operations
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setElapsed(0);
-    timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
-  }, []);
-
-  const stopTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-    setElapsed(0);
-  }, []);
-
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
+    try {
+      const prefill = sessionStorage.getItem('rm_prefill_job_description');
+      if (prefill) {
+        setJobDescription(prefill);
+        sessionStorage.removeItem('rm_prefill_job_description');
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, [setJobDescription]);
 
   const router = useRouter();
   const { setImprovedData } = useResumePreview();
   const {
     status: systemStatus,
     isLoading: statusLoading,
-    incrementJobs,
     incrementImprovements,
     incrementResumes,
   } = useStatusCache();
@@ -177,11 +161,13 @@ export default function TailorPage() {
           return;
         }
         setMasters(ready);
-        setMasterResumeId(initial.resume_id);
+        setMasterResumeId((prev) =>
+          prev && ready.some((r) => r.resume_id === prev) ? prev : initial.resume_id
+        );
       } catch {
         if (cancelled) return;
         const storedId = localStorage.getItem('master_resume_id');
-        if (storedId) setMasterResumeId(storedId);
+        if (storedId) setMasterResumeId((prev) => prev || storedId);
         else router.push('/dashboard');
       }
     })();
@@ -189,7 +175,7 @@ export default function TailorPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, setMasterResumeId, setMasters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,8 +186,9 @@ export default function TailorPage() {
         const config = await fetchPromptConfig();
         if (!cancelled) {
           setPromptOptions(config.prompt_options || []);
-          if (!hasUserSelectedPrompt.current) {
+          if (!promptDefaultApplied && !hasUserSelectedPrompt.current) {
             setSelectedPromptId(config.default_prompt_id || 'keywords');
+            promptDefaultApplied = true;
           }
         }
       } catch (err) {
@@ -217,7 +204,7 @@ export default function TailorPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setSelectedPromptId]);
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') e.stopPropagation();
@@ -292,7 +279,7 @@ export default function TailorPage() {
     confirmationBusy.current = false;
     missingDiffConfirmInFlight.current = false;
     setIsConfirming(false);
-    setIsLoading(false);
+    setIsActionBusy(false);
     setShowDiffModal(false);
     setShowMissingDiffDialog(false);
     setPendingResult(null);
@@ -312,64 +299,16 @@ export default function TailorPage() {
     return null;
   };
 
-  const runGenerate = async (resumeId: string, description: string, token: number) => {
-    setAtsResult(null);
-    setWritingResult(null);
-    setWritingResume(null);
-    resetKeywordState();
-    setProgressStage(null);
-    setIsGenerating(true);
-    const progressId = newProgressId();
-    const stopProgress = subscribeToProgress(progressId, (stage) => {
-      if (isCurrent(token)) setProgressStage(stage);
+  const runGenerate = async (resumeId: string, description: string) => {
+    setDiffConfirmError(null);
+    setMissingDiffError(null);
+    await startTailorPreview({
+      resumeId,
+      description,
+      promptId: selectedPromptId,
+      mastersList: masters,
+      onResetKeywords: resetKeywordState,
     });
-    try {
-      // 1. Upload Job Description
-      // The API expects an array of strings
-      previewSourceIdRef.current = resumeId;
-      const jobId = await uploadJobDescriptions([description], resumeId);
-      if (!isCurrent(token)) return;
-      incrementJobs(); // Update cached counter
-
-      // 2. Preview Resume
-      // Fit pages the way the source resume is formatted.
-      const templateSettings =
-        masters.find((m) => m.resume_id === resumeId)?.template_settings ??
-        DEFAULT_TEMPLATE_SETTINGS;
-      const result = await previewImproveResume(resumeId, jobId, selectedPromptId, {
-        ...buildPreviewLengthOptions(tailorLength, toPageFitSettings(templateSettings, locale)),
-        progressId,
-      });
-      if (!isCurrent(token)) return;
-
-      if (!result?.data?.diff_summary || !result?.data?.detailed_changes) {
-        console.warn('Diff data missing for tailor preview; requesting user confirmation.');
-        setDiffConfirmError(null);
-        setPendingResult(null);
-        setShowDiffModal(false);
-        setMissingDiffError(null);
-        setMissingDiffResult(result);
-        setShowMissingDiffDialog(true);
-        return;
-      }
-
-      // 3. Show diff preview modal
-      setDiffConfirmError(null);
-      setMissingDiffError(null);
-      setPendingResult(result);
-      setAtsResult(result.data.ats_score ?? null);
-      setAtsTemplate(templateSettings.template);
-      setWritingResult(result.data.writing ?? null);
-      setWritingResume((result.data.resume_preview as ResumeData) ?? null);
-      setShowDiffModal(true);
-    } catch (err) {
-      if (!isCurrent(token)) return;
-      console.error(err);
-      setError(getPreviewErrorMessage(err, t));
-    } finally {
-      stopProgress();
-      if (isCurrent(token)) setIsGenerating(false);
-    }
   };
 
   // Work chosen keywords into the pending preview; the result replaces it.
@@ -431,26 +370,14 @@ export default function TailorPage() {
 
   const handleGenerate = async () => {
     const trimmedDescription = jobDescription.trim();
-    if (!trimmedDescription || !masterResumeId) return;
+    if (!trimmedDescription || !masterResumeId || isLoading) return;
     const validationError = getGenerateValidationError(trimmedDescription);
     if (validationError) {
       setError(validationError);
       return;
     }
-    const resumeId = masterResumeId;
-    const token = begin();
-    if (token === null) return;
-    setIsLoading(true);
     setError(null);
-    startTimer();
-    try {
-      await runGenerate(resumeId, trimmedDescription, token);
-    } finally {
-      if (isCurrent(token)) {
-        setIsLoading(false);
-        stopTimer();
-      }
-    }
+    await runGenerate(masterResumeId, trimmedDescription);
   };
 
   // User confirms changes
@@ -510,7 +437,7 @@ export default function TailorPage() {
 
   const handleCloseMissingDiffDialog = () => {
     invalidate();
-    setIsLoading(false);
+    setIsActionBusy(false);
     setShowMissingDiffDialog(false);
     setMissingDiffResult(null);
     setMissingDiffError(null);
@@ -522,7 +449,7 @@ export default function TailorPage() {
     const token = begin();
     if (token === null) return;
     missingDiffConfirmInFlight.current = true;
-    setIsLoading(true);
+    setIsActionBusy(true);
     setError(null);
     setMissingDiffError(null);
     try {
@@ -539,7 +466,7 @@ export default function TailorPage() {
     } finally {
       if (isCurrent(token)) {
         missingDiffConfirmInFlight.current = false;
-        setIsLoading(false);
+        setIsActionBusy(false);
       }
     }
   };
@@ -547,26 +474,14 @@ export default function TailorPage() {
   const handleRegenerateConfirm = async () => {
     setShowRegenerateDialog(false);
     const trimmedDescription = jobDescription.trim();
-    if (!trimmedDescription || !masterResumeId) return;
+    if (!trimmedDescription || !masterResumeId || isLoading) return;
     const validationError = getGenerateValidationError(trimmedDescription);
     if (validationError) {
       setError(validationError);
       return;
     }
-    const resumeId = masterResumeId;
-    const token = begin();
-    if (token === null) return;
-    setIsLoading(true);
     setError(null);
-    startTimer();
-    try {
-      await runGenerate(resumeId, trimmedDescription, token);
-    } finally {
-      if (isCurrent(token)) {
-        setIsLoading(false);
-        stopTimer();
-      }
-    }
+    await runGenerate(masterResumeId, trimmedDescription);
   };
 
   // Missing keywords the pending preview still lacks (forced ones drop off the chips).
@@ -588,6 +503,7 @@ export default function TailorPage() {
         <PageHeader.Title>{t('tailor.heroTitle')}</PageHeader.Title>
         <PageHeader.Subtitle>{t('tailor.subtitle')}</PageHeader.Subtitle>
         <PageHeader.Actions>
+          <FeatureGuideButton topic="tailor" />
           <Link href="/queue" className={buttonClass({ variant: 'outline', size: 'sm' })}>
             <ListNumbers aria-hidden="true" />
             {t('nav.queue')}

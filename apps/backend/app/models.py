@@ -215,3 +215,29 @@ class QueueItem(Base):
     prompt_id: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[str] = mapped_column(String, default=_utcnow_iso)
     updated_at: Mapped[str] = mapped_column(String, default=_utcnow_iso)
+
+
+class JobListing(Base):
+    """A discovered or imported external job listing for the Job Feed."""
+
+    __tablename__ = "job_listings"
+
+    listing_id: Mapped[str] = mapped_column(String, primary_key=True)
+    source: Mapped[str] = mapped_column(String, index=True)
+    external_key: Mapped[str] = mapped_column(String, unique=True, index=True)
+    title: Mapped[str] = mapped_column(String)
+    company: Mapped[str] = mapped_column(String, default="")
+    location: Mapped[str] = mapped_column(String, default="")
+    via: Mapped[str | None] = mapped_column(String, nullable=True)
+    posted_at_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    posted_hours_ago: Mapped[float | None] = mapped_column(Float, nullable=True)
+    schedule_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    salary_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    apply_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    apply_links: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    description: Mapped[str] = mapped_column(Text, default="")
+    match_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    evaluation_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    is_bookmarked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[str] = mapped_column(String, default=_utcnow_iso)
+    updated_at: Mapped[str] = mapped_column(String, default=_utcnow_iso)

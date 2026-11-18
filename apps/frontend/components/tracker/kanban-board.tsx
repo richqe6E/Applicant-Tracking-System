@@ -17,6 +17,7 @@ import { ArrowLeft, Plus, Gear, SpinnerGap, CaretLeft, CaretRight } from '@phosp
 import { Button, buttonClass } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FeatureGuideButton } from '@/components/common/feature-guide';
 import { useTranslations } from '@/lib/i18n';
 import {
   listApplications,
@@ -237,6 +238,7 @@ export function KanbanBoard() {
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3">
+          <FeatureGuideButton topic="tracker" />
           <Button type="button" variant="outline" size="sm" onClick={() => setManageOpen(true)}>
             <Gear aria-hidden="true" />
             {t('tracker.manage')}

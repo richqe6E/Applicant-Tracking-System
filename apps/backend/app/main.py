@@ -31,6 +31,7 @@ from app.routers import (
     config_router,
     enrichment_router,
     health_router,
+    job_feed_router,
     jobs_router,
     resume_wizard_router,
     resumes_router,
@@ -150,6 +151,7 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(config_router, prefix="/api/v1")
 app.include_router(resumes_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(job_feed_router, prefix="/api/v1")
 app.include_router(enrichment_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")
 app.include_router(applications_ai_router, prefix="/api/v1")

@@ -39,6 +39,7 @@ from app.models import (
     Application,
     Improvement,
     Job,
+    JobListing,
     QueueItem,
     Resume,
     TailoringPreview,
@@ -1552,6 +1553,7 @@ class Database:
         async with queue_manager.paused():
             async with self._write_session() as session:
                 await session.execute(delete(QueueItem))
+                await session.execute(delete(JobListing))
                 await session.execute(delete(TailoringPreview))
                 await session.execute(delete(Application))
                 await session.execute(delete(Improvement))
@@ -1684,6 +1686,164 @@ class Database:
             stmt = stmt.where(QueueItem.status == status)
         if resume_id:
             stmt = stmt.where(QueueItem.resume_id == resume_id)
+        async with self._write_session() as session:
+            result = await session.execute(stmt)
+            await session.commit()
+            return int(result.rowcount or 0)
+
+    # -- Job feed listings ---------------------------------------------------
+
+    @staticmethod
+    def _job_listing_to_dict(row: JobListing) -> dict[str, Any]:
+        return {
+            "listing_id": row.listing_id,
+            "source": row.source,
+            "external_key": row.external_key,
+            "title": row.title,
+            "company": row.company,
+            "location": row.location,
+            "via": row.via,
+            "posted_at_text": row.posted_at_text,
+            "posted_hours_ago": row.posted_hours_ago,
+            "schedule_type": row.schedule_type,
+            "salary_text": row.salary_text,
+            "apply_url": row.apply_url,
+            "apply_links": row.apply_links or [],
+            "description": row.description,
+            "match_score": row.match_score,
+            "evaluation": row.evaluation_json,
+            "is_bookmarked": bool(row.is_bookmarked),
+            "created_at": row.created_at,
+            "updated_at": row.updated_at,
+        }
+
+    async def upsert_job_listings(
+        self, items: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Insert or update discovered/imported job listings keyed by external_key."""
+        if not items:
+            return []
+        now = _now()
+        saved: list[dict[str, Any]] = []
+        async with self._write_session() as session:
+            for item in items:
+                ext_key = item["external_key"]
+                result = await session.execute(
+                    select(JobListing).where(JobListing.external_key == ext_key)
+                )
+                row = result.scalars().first()
+                if row is None:
+                    row = JobListing(
+                        listing_id=item.get("listing_id") or str(uuid4()),
+                        source=item["source"],
+                        external_key=ext_key,
+                        title=item["title"],
+                        company=item.get("company") or "",
+                        location=item.get("location") or "",
+                        via=item.get("via"),
+                        posted_at_text=item.get("posted_at_text"),
+                        posted_hours_ago=item.get("posted_hours_ago"),
+                        schedule_type=item.get("schedule_type"),
+                        salary_text=item.get("salary_text"),
+                        apply_url=item.get("apply_url"),
+                        apply_links=item.get("apply_links") or [],
+                        description=item.get("description") or "",
+                        match_score=item.get("match_score"),
+                        is_bookmarked=bool(item.get("is_bookmarked", False)),
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    session.add(row)
+                else:
+                    row.title = item.get("title") or row.title
+                    row.company = item.get("company") or row.company
+                    row.location = item.get("location") or row.location
+                    if item.get("via"):
+                        row.via = item["via"]
+                    if item.get("posted_at_text"):
+                        row.posted_at_text = item["posted_at_text"]
+                    if item.get("posted_hours_ago") is not None:
+                        row.posted_hours_ago = item["posted_hours_ago"]
+                    if item.get("schedule_type"):
+                        row.schedule_type = item["schedule_type"]
+                    if item.get("salary_text"):
+                        row.salary_text = item["salary_text"]
+                    if item.get("apply_url"):
+                        row.apply_url = item["apply_url"]
+                    if item.get("apply_links"):
+                        row.apply_links = item["apply_links"]
+                    if item.get("description"):
+                        row.description = item["description"]
+                    if item.get("match_score") is not None:
+                        row.match_score = item["match_score"]
+                    row.updated_at = now
+                saved.append(row)
+            await session.commit()
+            for row in saved:
+                await session.refresh(row)
+            return [self._job_listing_to_dict(row) for row in saved]
+
+    async def list_job_listings(
+        self, *, bookmarked_only: bool = False, limit: int = 200
+    ) -> list[dict[str, Any]]:
+        """Return saved/cached job listings, newest updated first."""
+        stmt = select(JobListing)
+        if bookmarked_only:
+            stmt = stmt.where(JobListing.is_bookmarked.is_(True))
+        stmt = stmt.order_by(
+            JobListing.updated_at.desc(), JobListing.listing_id.desc()
+        ).limit(limit)
+        async with self._session() as session:
+            result = await session.execute(stmt)
+            return [self._job_listing_to_dict(row) for row in result.scalars().all()]
+
+    async def get_job_listing(self, listing_id: str) -> dict[str, Any] | None:
+        """Fetch one job listing by listing_id."""
+        async with self._session() as session:
+            row = await session.get(JobListing, listing_id)
+            return self._job_listing_to_dict(row) if row else None
+
+    async def toggle_job_listing_bookmark(
+        self, listing_id: str, bookmarked: bool | None = None
+    ) -> dict[str, Any] | None:
+        """Set or flip bookmark state on a job listing."""
+        async with self._write_session() as session:
+            row = await session.get(JobListing, listing_id)
+            if row is None:
+                return None
+            row.is_bookmarked = (not row.is_bookmarked) if bookmarked is None else bookmarked
+            row.updated_at = _now()
+            await session.commit()
+            return self._job_listing_to_dict(row)
+
+    async def update_job_listing_evaluation(
+        self, listing_id: str, evaluation: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Persist Career-Ops multi-dimensional evaluation JSON on a job listing."""
+        async with self._write_session() as session:
+            row = await session.get(JobListing, listing_id)
+            if row is None:
+                return None
+            row.evaluation_json = evaluation
+            row.updated_at = _now()
+            await session.commit()
+            return self._job_listing_to_dict(row)
+
+    async def delete_job_listing(self, listing_id: str) -> bool:
+        """Delete one job listing."""
+        async with self._write_session() as session:
+            row = await session.get(JobListing, listing_id)
+            if row is None:
+                return False
+            await session.delete(row)
+            await session.commit()
+            return True
+
+    async def clear_job_listings(self, *, keep_bookmarked: bool = True) -> int:
+        """Clear cached job listings, optionally preserving bookmarked ones."""
+        stmt = delete(JobListing)
+        if keep_bookmarked:
+            stmt = stmt.where(JobListing.is_bookmarked.is_(False))
         async with self._write_session() as session:
             result = await session.execute(stmt)
             await session.commit()

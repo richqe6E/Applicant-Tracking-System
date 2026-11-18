@@ -9,6 +9,7 @@ LANGUAGE_NAMES = {
     "pt": "Brazilian Portuguese",
     "fr": "French",
     "ko": "Korean",
+    "id": "Indonesian",
 }
 
 
@@ -539,6 +540,7 @@ Content requirements:
 - project_follow_ups: 3-6 questions.
 - skill_gaps: 3-5 preparation targets.
 - talking_points: 5-8 concise points.
+- For each question in resume_questions and project_follow_ups, structure suggested_answer_points using the STAR method (Situation, Task, Action, Result — labeled in {output_language}) grounded strictly in real resume evidence. If the resume lacks a concrete metric for Result, state the qualitative outcome shown in the resume without inventing numbers.
 - Keep all suggested answer points factual and resume-grounded.
 - Do NOT use markdown fences or commentary outside the JSON."""
 

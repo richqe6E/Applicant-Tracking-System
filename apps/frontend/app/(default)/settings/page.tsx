@@ -55,6 +55,7 @@ import { BrandIcon, hasBrandIcon } from '@/components/ui/brand-icon';
 import { PageFrame } from '@/components/ui/page-frame';
 import { PageHeader } from '@/components/ui/page-header';
 import { SettingsAbout, SettingsSupportStrip } from '@/components/settings/community';
+import { FeatureGuideButton } from '@/components/common/feature-guide';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown } from '@/components/ui/dropdown';
 import {
@@ -818,6 +819,9 @@ export default function SettingsPage() {
           <PageHeader.Back href="/dashboard">{t('common.back')}</PageHeader.Back>
           <PageHeader.Title>{t('settings.title')}</PageHeader.Title>
           <PageHeader.Subtitle>{t('settings.subtitle')}</PageHeader.Subtitle>
+          <PageHeader.Actions>
+            <FeatureGuideButton topic="settings" />
+          </PageHeader.Actions>
         </PageHeader>
 
         <div className="px-8 py-8 md:px-12 space-y-8">

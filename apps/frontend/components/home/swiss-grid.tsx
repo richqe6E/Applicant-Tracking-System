@@ -3,8 +3,9 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ListNumbers, SquaresFour } from '@phosphor-icons/react';
+import { ListNumbers, MagnifyingGlass, SquaresFour } from '@phosphor-icons/react';
 import { CommunityLinks } from '@/components/common/community-links';
+import { FeatureGuideButton } from '@/components/common/feature-guide';
 import { buttonClass } from '@/components/ui/button';
 import { PageFrame } from '@/components/ui/page-frame';
 import { PageHeader } from '@/components/ui/page-header';
@@ -22,11 +23,50 @@ export const SwissGrid = ({
   const { t } = useTranslations();
 
   return (
-    <PageFrame height="screen">
-      <PageHeader>
+    <PageFrame>
+      <PageHeader className="p-6 md:p-8">
         <PageHeader.Title>{t('nav.dashboard')}</PageHeader.Title>
         <PageHeader.Subtitle>{t('dashboard.selectModule')}</PageHeader.Subtitle>
+        <PageHeader.Actions>
+          <FeatureGuideButton topic="dashboard" />
+          <Link href="/jobs-feed" className={buttonClass({ variant: 'default', size: 'sm' })}>
+            <MagnifyingGlass aria-hidden="true" />
+            {t('nav.jobsFeed')}
+          </Link>
+        </PageHeader.Actions>
       </PageHeader>
+
+      {/* Friendly 4-Step Workflow Strip */}
+      <div className="border-b border-ink bg-panel px-6 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="font-mono text-xs font-bold uppercase tracking-wider text-ink">
+            {t('dashboard.workflowBannerTitle')}
+          </span>
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <span className="px-2 py-1 border border-ink bg-paper text-ink">
+              {t('dashboard.workflowStep1')}
+            </span>
+            <Link
+              href="/jobs-feed"
+              className="px-2 py-1 border border-ink bg-paper text-primary hover:bg-highlight font-bold"
+            >
+              {t('dashboard.workflowStep2')}
+            </Link>
+            <Link
+              href="/tailor"
+              className="px-2 py-1 border border-ink bg-paper text-ink hover:bg-highlight"
+            >
+              {t('dashboard.workflowStep3')}
+            </Link>
+            <Link
+              href="/tracker"
+              className="px-2 py-1 border border-ink bg-paper text-ink hover:bg-highlight"
+            >
+              {t('dashboard.workflowStep4')}
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* Content Grid - Scrollable area with NO padding.
           @container makes the card grid respond to the container's actual
@@ -50,6 +90,13 @@ export const SwissGrid = ({
           <span className="text-steel">v{APP_VERSION}</span>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          <Link
+            href="/jobs-feed"
+            className={buttonClass({ variant: 'default', className: 'min-w-36' })}
+          >
+            <MagnifyingGlass aria-hidden="true" />
+            {t('nav.jobsFeed')}
+          </Link>
           <Link
             href="/queue"
             className={buttonClass({ variant: 'outline', className: 'min-w-36' })}
